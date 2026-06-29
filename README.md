@@ -172,7 +172,7 @@ stateDiagram-v2
         ExtractColumns --> GeneratePreview
         GeneratePreview --> [*]
     }
-    note right of Step1_Load : Output: DataFrame + Summary Dict
+    note right of Step1_Load : Output - DataFrame + Summary Dict
 
     Step1_Load --> Step2_Quality : Pass DataFrame
 
@@ -184,7 +184,7 @@ stateDiagram-v2
         CalculateScore --> AssignGrade
         AssignGrade --> [*]
     }
-    note right of Step2_Quality : Output: Quality Score 0-100 + Grade
+    note right of Step2_Quality : Output - Quality Score 0-100 + Grade
 
     Step2_Quality --> Step3_EDA : Pass DataFrame
 
@@ -195,7 +195,7 @@ stateDiagram-v2
         BuildBoxplots --> BuildHeatmap
         BuildHeatmap --> [*]
     }
-    note right of Step3_EDA : Output: Stats + Plotly Figures
+    note right of Step3_EDA : Output - Stats + Plotly Figures
 
     Step3_EDA --> Step4_Outlier : Pass DataFrame
 
@@ -205,7 +205,7 @@ stateDiagram-v2
         ComputeZScore --> AggregateResults
         AggregateResults --> [*]
     }
-    note right of Step4_Outlier : Output: Outlier Counts + Bounds
+    note right of Step4_Outlier : Output - Outlier Counts + Bounds
 
     Step4_Outlier --> Step5_Preprocess : Pass DataFrame
 
@@ -218,7 +218,7 @@ stateDiagram-v2
         CheckEncoding --> CheckScaling
         CheckScaling --> [*]
     }
-    note right of Step5_Preprocess : Output: List of Recommendations
+    note right of Step5_Preprocess : Output - List of Recommendations
 
     Step5_Preprocess --> Step6_Model : Pass DataFrame + Target
 
@@ -237,7 +237,7 @@ stateDiagram-v2
         DetectProblemType --> SuggestModels
         SuggestModels --> [*]
     }
-    note right of Step6_Model : Output: Problem Type + Model List
+    note right of Step6_Model : Output - Problem Type + Model List
 
     Step6_Model --> Step7_Report : All Results
 
@@ -247,7 +247,7 @@ stateDiagram-v2
         FormatTables --> WriteMarkdown
         WriteMarkdown --> [*]
     }
-    note right of Step7_Report : Output: Full Markdown Report
+    note right of Step7_Report : Output - Full Markdown Report
 
     Step7_Report --> Done : Pipeline Complete
     Done --> [*]
