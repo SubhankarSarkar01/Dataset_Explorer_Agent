@@ -54,6 +54,41 @@ def sanitize_nans(val):
         return None
     return val
 
+def clean_plotly_fig(fig):
+    if fig is None:
+        return None
+    import base64
+    fig_dict = fig.to_dict()
+    
+    def convert(obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        elif isinstance(obj, dict):
+            if 'bdata' in obj and 'dtype' in obj:
+                buffer = base64.b64decode(obj['bdata'])
+                dtype_str = obj['dtype']
+                arr = np.frombuffer(buffer, dtype=dtype_str)
+                if 'shape' in obj:
+                    shape_val = obj['shape']
+                    if isinstance(shape_val, str):
+                        shape_tuple = tuple(int(x.strip()) for x in shape_val.split(',') if x.strip())
+                        arr = arr.reshape(shape_tuple)
+                    elif isinstance(shape_val, list):
+                        arr = arr.reshape(tuple(shape_val))
+                return [convert(x) for x in arr.tolist()]
+            return {k: convert(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [convert(v) for v in obj]
+        elif isinstance(obj, float):
+            if np.isnan(obj) or np.isinf(obj):
+                return None
+            return obj
+        elif pd.isna(obj):
+            return None
+        return obj
+        
+    return convert(fig_dict)
+
 @app.route('/api/preview', methods=['POST'])
 def preview():
     if 'file' not in request.files:
@@ -178,7 +213,7 @@ def analyze():
             
         # Pearson Correlation Heatmap
         corr_fig = eda_agent.plot_correlation_heatmap(df_sampled)
-        corr_heatmap_json = json.loads(json.dumps(corr_fig, cls=plotly.utils.PlotlyJSONEncoder)) if corr_fig else None
+        corr_heatmap_json = clean_plotly_fig(corr_fig)
         
         # Pre-generate distributions (histograms & box plots) for all numeric columns
         numeric_cols = list(df_sampled.select_dtypes(include=[np.number]).columns)
@@ -187,8 +222,8 @@ def analyze():
             hist_fig = eda_agent.plot_histogram(df_sampled, col)
             box_fig = eda_agent.plot_boxplot(df_sampled, col)
             eda_plots[col] = {
-                "histogram": json.loads(json.dumps(hist_fig, cls=plotly.utils.PlotlyJSONEncoder)) if hist_fig else None,
-                "boxplot": json.loads(json.dumps(box_fig, cls=plotly.utils.PlotlyJSONEncoder)) if box_fig else None
+                "histogram": clean_plotly_fig(hist_fig),
+                "boxplot": clean_plotly_fig(box_fig)
             }
             
         # Pre-generate categorical value counts
