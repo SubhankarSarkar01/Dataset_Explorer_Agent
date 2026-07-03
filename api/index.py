@@ -26,8 +26,8 @@ CORS(app)
 @app.route('/index.html')
 def index():
     try:
-        public_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "public"))
-        with open(os.path.join(public_dir, "index.html"), "r", encoding="utf-8") as f:
+        api_dir = os.path.dirname(__file__)
+        with open(os.path.join(api_dir, "index.html"), "r", encoding="utf-8") as f:
             return f.read(), 200, {'Content-Type': 'text/html'}
     except Exception as e:
         return f"Error loading index.html: {str(e)}", 500
