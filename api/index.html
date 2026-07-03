@@ -1034,7 +1034,19 @@
         });
         
         if (!response.ok) {
-          throw new Error('Failed to load preview');
+          let errMsg = 'Failed to load preview';
+          try {
+            const errJson = await response.json();
+            if (errJson && errJson.error) {
+              errMsg = errJson.error;
+            }
+          } catch (e) {
+            try {
+              const text = await response.text();
+              if (text) errMsg = text.substring(0, 200);
+            } catch (_) {}
+          }
+          throw new Error(errMsg);
         }
         
         previewData = await response.json();
@@ -1083,7 +1095,22 @@
         });
         
         if (!response.ok) {
-          throw new Error('Analysis request failed');
+          let errMsg = 'Analysis request failed';
+          try {
+            const errJson = await response.json();
+            if (errJson && errJson.error) {
+              errMsg = errJson.error;
+              if (errJson.traceback) {
+                console.error("Server Traceback:", errJson.traceback);
+              }
+            }
+          } catch (e) {
+            try {
+              const text = await response.text();
+              if (text) errMsg = text.substring(0, 200);
+            } catch (_) {}
+          }
+          throw new Error(errMsg);
         }
         
         analysisData = await response.json();
