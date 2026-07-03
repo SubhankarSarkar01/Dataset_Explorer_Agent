@@ -1,11 +1,13 @@
 {
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/index.py" },
-    { "source": "/(.*)", "destination": "/public/$1" }
+    { "source": "/(.*)", "destination": "/api/index.py" }
   ],
   "functions": {
     "api/index.py": {
-      "includeFiles": "agents/**"
+      "includeFiles": [
+        "agents/**",
+        "public/**"
+      ]
     }
   }
 }
