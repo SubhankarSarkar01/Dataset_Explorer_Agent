@@ -4,10 +4,7 @@
   ],
   "functions": {
     "api/index.py": {
-      "includeFiles": [
-        "agents/**",
-        "public/**"
-      ]
+      "includeFiles": "{agents/**,public/**}"
     }
   }
 }
