@@ -26,11 +26,11 @@ class ModelAgent:
             return "Classification"
             
         # 2. Float type -> Regression
-        if np.issubdtype(dtype, np.floating):
+        if pd.api.types.is_float_dtype(dtype):
             return "Regression"
             
         # 3. Integer type -> Cardinarity heuristic
-        if np.issubdtype(dtype, np.integer):
+        if pd.api.types.is_integer_dtype(dtype):
             # If the column has few unique values (e.g. <= 15), it is likely representing classes/labels
             if unique_count <= 15:
                 return "Classification"

@@ -50,7 +50,7 @@ class EDAAgent:
         """
         Generates an interactive Plotly histogram with a marginal boxplot for a numeric column.
         """
-        if column not in df.columns or not np.issubdtype(df[column].dtype, np.number):
+        if column not in df.columns or not pd.api.types.is_numeric_dtype(df[column].dtype):
             return None
         
         # Drop NaNs for plotting
@@ -79,7 +79,7 @@ class EDAAgent:
         """
         Generates an interactive Plotly boxplot for a numeric column.
         """
-        if column not in df.columns or not np.issubdtype(df[column].dtype, np.number):
+        if column not in df.columns or not pd.api.types.is_numeric_dtype(df[column].dtype):
             return None
             
         cleaned_series = df[column].dropna()

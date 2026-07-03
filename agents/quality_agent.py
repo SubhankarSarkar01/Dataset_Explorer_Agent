@@ -58,7 +58,7 @@ class DataQualityAgent:
             dtype_str = str(df[col].dtype)
             
             # Skip if column is already numeric or datetime
-            if np.issubdtype(df[col].dtype, np.number) or np.issubdtype(df[col].dtype, np.datetime64):
+            if pd.api.types.is_numeric_dtype(df[col].dtype) or pd.api.types.is_datetime64_any_dtype(df[col].dtype):
                 continue
                 
             # Sample up to 100 non-null values to test formats
