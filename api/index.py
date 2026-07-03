@@ -58,7 +58,10 @@ def preview():
         # Ensure NaNs are converted to None for valid JSON serialization
         preview_records = [{k: (None if pd.isna(v) else v) for k, v in row.items()} for row in preview_records]
         
-        memory_usage = df.memory_usage(deep=True).sum() / (1024 * 1024)
+        if len(df) > 50000:
+            memory_usage = df.memory_usage(deep=False).sum() / (1024 * 1024)
+        else:
+            memory_usage = df.memory_usage(deep=True).sum() / (1024 * 1024)
         
         column_metadata = []
         for col in df.columns:
@@ -97,17 +100,27 @@ def analyze():
         # 1. Load Data
         df = loader_agent.load_data(file)
         
+        # Create a sampled version for heavy/large tasks to avoid Vercel timeouts (10s) and payload size limits (4.5MB)
+        df_sampled = df
+        if len(df) > 5000:
+            df_sampled = df.sample(n=5000, random_state=42)
+            
         # 2. Get Loader Summary
         loader_summary = loader_agent.get_summary(df)
         preview_records = loader_summary['preview'].to_dict(orient="records")
         preview_records = [{k: (None if pd.isna(v) else v) for k, v in row.items()} for row in preview_records]
         
+        if len(df) > 50000:
+            mem_use = df.memory_usage(deep=False).sum() / (1024 * 1024)
+        else:
+            mem_use = df.memory_usage(deep=True).sum() / (1024 * 1024)
+            
         loader_summary_json = {
             "rows": int(loader_summary['rows']),
             "columns": loader_summary['columns'],
             "num_columns": int(loader_summary['num_columns']),
             "preview": preview_records,
-            "memory_usage": round(float(df.memory_usage(deep=True).sum() / (1024 * 1024)), 2)
+            "memory_usage": round(float(mem_use), 2)
         }
         
         # 3. Data Quality
@@ -124,16 +137,16 @@ def analyze():
         ]
         
         # 4. Outliers
-        outlier_res = outlier_agent.analyze_outliers(df)
+        outlier_res = outlier_agent.analyze_outliers(df_sampled)
         
         # 5. Preprocessing
-        prep_recs = preprocess_agent.recommend(df)
+        prep_recs = preprocess_agent.recommend(df_sampled)
         
         # 6. Model Recommendations
-        model_recs = model_agent.recommend(df, target_column)
+        model_recs = model_agent.recommend(df_sampled, target_column)
         
         # 7. EDA
-        eda_stats = eda_agent.get_descriptive_stats(df)
+        eda_stats = eda_agent.get_descriptive_stats(df_sampled)
         
         # Convert descriptive stats DataFrames to serializable dicts
         # pd.DataFrame.to_dict(orient="split") or "index" is great
@@ -151,25 +164,25 @@ def analyze():
             categorical_stats = [{k: (None if pd.isna(v) else v) for k, v in row.items()} for row in categorical_stats_records]
             
         # Pearson Correlation Heatmap
-        corr_fig = eda_agent.plot_correlation_heatmap(df)
+        corr_fig = eda_agent.plot_correlation_heatmap(df_sampled)
         corr_heatmap_json = json.loads(json.dumps(corr_fig, cls=plotly.utils.PlotlyJSONEncoder)) if corr_fig else None
         
         # Pre-generate distributions (histograms & box plots) for all numeric columns
-        numeric_cols = list(df.select_dtypes(include=[np.number]).columns)
+        numeric_cols = list(df_sampled.select_dtypes(include=[np.number]).columns)
         eda_plots = {}
         for col in numeric_cols:
-            hist_fig = eda_agent.plot_histogram(df, col)
-            box_fig = eda_agent.plot_boxplot(df, col)
+            hist_fig = eda_agent.plot_histogram(df_sampled, col)
+            box_fig = eda_agent.plot_boxplot(df_sampled, col)
             eda_plots[col] = {
                 "histogram": json.loads(json.dumps(hist_fig, cls=plotly.utils.PlotlyJSONEncoder)) if hist_fig else None,
                 "boxplot": json.loads(json.dumps(box_fig, cls=plotly.utils.PlotlyJSONEncoder)) if box_fig else None
             }
             
         # Pre-generate categorical value counts
-        categorical_cols = list(df.select_dtypes(include=['object', 'category', 'bool']).columns)
+        categorical_cols = list(df_sampled.select_dtypes(include=['object', 'category', 'bool']).columns)
         cat_counts = {}
         for col in categorical_cols:
-            val_counts_df = eda_agent.get_value_counts(df, col)
+            val_counts_df = eda_agent.get_value_counts(df_sampled, col)
             cat_counts[col] = val_counts_df.to_dict(orient="records") if not val_counts_df.empty else []
             
         # 8. Report Generation
