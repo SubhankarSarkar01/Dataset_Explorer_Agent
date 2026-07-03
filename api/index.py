@@ -41,6 +41,19 @@ preprocess_agent = PreprocessingAgent()
 model_agent = ModelAgent()
 report_agent = ReportAgent()
 
+def sanitize_nans(val):
+    if isinstance(val, dict):
+        return {k: sanitize_nans(v) for k, v in val.items()}
+    elif isinstance(val, list):
+        return [sanitize_nans(x) for x in val]
+    elif isinstance(val, float):
+        if np.isnan(val) or np.isinf(val):
+            return None
+        return val
+    elif pd.isna(val):
+        return None
+    return val
+
 @app.route('/api/preview', methods=['POST'])
 def preview():
     if 'file' not in request.files:
@@ -72,14 +85,14 @@ def preview():
                 "Non-Null Count": int(df[col].count())
             })
             
-        return jsonify({
+        return jsonify(sanitize_nans({
             "rows": int(summary['rows']),
             "columns": summary['columns'],
             "num_columns": int(summary['num_columns']),
             "preview": preview_records,
             "memory_usage": round(float(memory_usage), 2),
             "column_metadata": column_metadata
-        })
+        }))
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -212,7 +225,7 @@ def analyze():
             "markdown_report": report_md
         }
         
-        return jsonify(response_data)
+        return jsonify(sanitize_nans(response_data))
         
     except Exception as e:
         import traceback
