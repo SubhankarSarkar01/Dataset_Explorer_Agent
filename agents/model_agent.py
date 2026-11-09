@@ -21,23 +21,23 @@ class ModelAgent:
         dtype = series.dtype
         unique_count = series.nunique()
         
-        # 1. String, Category, Boolean types -> Classification
-        if dtype == 'object' or isinstance(dtype, pd.CategoricalDtype) or dtype == 'bool':
+        # Categorical and boolean targets are classification problems.
+        if (
+            pd.api.types.is_object_dtype(dtype)
+            or isinstance(dtype, pd.CategoricalDtype)
+            or pd.api.types.is_bool_dtype(dtype)
+        ):
             return "Classification"
-            
-        # 2. Float type -> Regression
-        if pd.api.types.is_float_dtype(dtype):
-            return "Regression"
-            
-        # 3. Integer type -> Cardinarity heuristic
-        if pd.api.types.is_integer_dtype(dtype):
-            # If the column has few unique values (e.g. <= 15), it is likely representing classes/labels
+
+        # Numeric targets can be either classification or regression.
+        # Binary and low-cardinality numeric targets are usually class labels,
+        # regardless of whether they are stored as integers or floats.
+        if pd.api.types.is_numeric_dtype(dtype):
             if unique_count <= 15:
                 return "Classification"
-            else:
-                return "Regression"
-                
-        return "Classification" # Fallback
+            return "Regression"
+
+        return "Unknown"
 
     def recommend(self, df: pd.DataFrame, target_col: Optional[str]) -> Dict[str, Any]:
         """
