@@ -17,7 +17,15 @@ class OutlierAgent:
         Returns a dictionary summarizing findings for every numeric column.
         """
         numeric_cols = df.select_dtypes(include=[np.number]).columns
-        
+
+        if df.empty or len(numeric_cols) == 0:
+            return {
+                "columns": {},
+                "total_iqr_outliers": 0,
+                "total_zscore_outliers": 0,
+                "num_numeric_columns": len(numeric_cols)
+            }
+
         column_summaries = {}
         total_iqr_outliers = 0
         total_z_outliers = 0
